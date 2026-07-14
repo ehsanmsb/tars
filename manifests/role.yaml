@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tars
+  namespace: tars
+  labels:
+    app.kubernetes.io/name: tars
+rules:
+  # Core API: read Services.
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get"]
+  # Discovery API: read EndpointSlices (where topology hints live).
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["list"]

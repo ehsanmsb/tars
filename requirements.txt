@@ -1,0 +1,6 @@
+# Official Kubernetes Python client.
+# Compatible with OKD 4.13 / Kubernetes 1.26+ (DiscoveryV1 EndpointSlices).
+kubernetes>=29.0.0,<33.0.0
+
+# Renders the startup banner (cosmetic only; the app runs fine without it).
+pyfiglet>=1.0.0

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: tars
+description: Lightweight Topology Aware Routing checker for one Kubernetes namespace.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

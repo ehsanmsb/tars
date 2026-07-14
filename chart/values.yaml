@@ -1,0 +1,29 @@
+replicaCount: 1
+
+image:
+  repository: tars
+  tag: latest
+  pullPolicy: IfNotPresent
+
+serviceName: nginx
+checkInterval: 300
+
+serviceAccount:
+  create: true
+  name: ""
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 96Mi
+
+podSecurityContext: {}
+
+securityContext: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

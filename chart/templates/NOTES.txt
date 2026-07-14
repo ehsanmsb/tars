@@ -1,0 +1,6 @@
+TARS has been installed into namespace {{ .Release.Namespace }}.
+
+It is checking Service {{ .Values.serviceName | quote }} every {{ .Values.checkInterval }} seconds.
+
+View logs with:
+  kubectl -n {{ .Release.Namespace }} logs -f deployment/{{ include "tars.fullname" . }}
