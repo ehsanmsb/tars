@@ -77,6 +77,8 @@ def run_check(
                 "service": config.service_name,
                 "tar_enabled": result.tar_enabled,
                 "annotation_present": result.annotation_present,
+                "topology_mode_present": result.topology_mode_present,
+                "topology_aware_hints_present": result.topology_aware_hints_present,
                 "endpoint_slices": result.endpoint_slices,
                 "total_endpoints": result.total_endpoints,
                 "ready_endpoints": result.ready_endpoints,

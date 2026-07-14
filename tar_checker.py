@@ -29,6 +29,12 @@ from kubernetes.client import (
 # Ref: https://kubernetes.io/docs/concepts/services-networking/topology-aware-routing/
 TOPOLOGY_MODE_ANNOTATION = "service.kubernetes.io/topology-mode"
 
+# Pre-1.27 annotation name (alias) that opts a Service into Topology Aware
+# Routing. It was renamed to ``topology-mode`` in Kubernetes 1.27, but clusters
+# older than 1.27 still write this key. TAR evaluation accepts either.
+# Ref: https://kubernetes.io/docs/concepts/services-networking/topology-aware-routing/
+TOPOLOGY_AWARE_HINTS_ANNOTATION = "service.kubernetes.io/topology-aware-hints"
+
 # Standard label that links an EndpointSlice to its parent Service.
 SERVICE_NAME_LABEL = "kubernetes.io/service-name"
 
@@ -41,6 +47,8 @@ class CheckResult:
     """Outcome of a single TAR verification pass."""
 
     annotation_present: bool
+    topology_mode_present: bool
+    topology_aware_hints_present: bool
     endpoint_slices: int
     total_endpoints: int
     ready_endpoints: int
@@ -55,10 +63,24 @@ def get_service(core_v1: CoreV1Api, namespace: str, name: str) -> V1Service:
     return core_v1.read_namespaced_service(name=name, namespace=namespace)
 
 
+def _service_annotations(service: V1Service) -> dict[str, str]:
+    """Return the Service annotations as a dict (empty when unset)."""
+    if service.metadata is None:
+        return {}
+    return service.metadata.annotations or {}
+
+
 def is_tar_annotation_present(service: V1Service) -> bool:
-    """Return True when the topology-mode annotation is set on the Service."""
-    annotations = service.metadata.annotations or {} if service.metadata else {}
-    return TOPOLOGY_MODE_ANNOTATION in annotations
+    """Return True when a topology-routing annotation is set on the Service.
+
+    Accepts both the current ``topology-mode`` annotation (1.27+) and the
+    older ``topology-aware-hints`` annotation used by Kubernetes < 1.27.
+    """
+    annotations = _service_annotations(service)
+    return (
+        TOPOLOGY_MODE_ANNOTATION in annotations
+        or TOPOLOGY_AWARE_HINTS_ANNOTATION in annotations
+    )
 
 
 def list_endpoint_slices(
@@ -135,7 +157,10 @@ def check_tar(
 ) -> CheckResult:
     """Perform one full TAR verification pass for the given Service."""
     service = get_service(core_v1, namespace, service_name)
-    annotation_present = is_tar_annotation_present(service)
+    annotations = _service_annotations(service)
+    topology_mode_present = TOPOLOGY_MODE_ANNOTATION in annotations
+    topology_aware_hints_present = TOPOLOGY_AWARE_HINTS_ANNOTATION in annotations
+    annotation_present = topology_mode_present or topology_aware_hints_present
 
     slices = list_endpoint_slices(discovery_v1, namespace, service_name)
     slice_count, total, ready, hinted, ready_with_hints = analyze_endpoint_slices(slices)
@@ -144,6 +169,8 @@ def check_tar(
     tar_enabled = reason is None
     return CheckResult(
         annotation_present=annotation_present,
+        topology_mode_present=topology_mode_present,
+        topology_aware_hints_present=topology_aware_hints_present,
         endpoint_slices=slice_count,
         total_endpoints=total,
         ready_endpoints=ready,
